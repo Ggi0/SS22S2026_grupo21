@@ -1,0 +1,6 @@
+.env
+Transformacion/__pycache__/
+*.pyc
+logs/*.log
+.env/
+env/
