@@ -213,22 +213,7 @@ print(pivot_ciudad)
 
 
 
-# 8. INTERPRETACION DE RESULTADOS
-line("8. INTERPRETACION CONCISA DE RESULTADOS")
-filas_finales = len(df)
-print(f"- Filas originales: {filas_iniciales} -> Filas finales limpias: {filas_finales}")
-print(f"- Se eliminaron {dup_exactos} filas duplicadas exactas y {dup_id} duplicados por id_cliente.")
-print(f"- Se eliminaron {filas_fecha_eliminadas} filas con fecha_registro irrecuperable.")
-print("- 'gasto_q' paso de tener nulos y formato mixto (coma/punto) a ser 100% numerico (float),")
-print("  imputando los vacios con la mediana de su propia categoria para no distorsionar el promedio.")
-print("- 'categoria' y 'ciudad' quedaron con nomenclatura unica (Title Case), eliminando duplicados")
-print("  logicos como 'RETAIL' / 'retail' / 'Retail ' que antes se contaban como categorias distintas.")
-print("- 'fecha_registro' quedo 100% en formato ISO-8601 (YYYY-MM-DD), compatible con cualquier motor de BD.")
-print("- El dataset final no contiene celdas vacias y esta listo para cargarse a una tabla relacional")
-print("  (tipos consistentes: id_cliente=int, fecha_registro=date, gasto_q=float, resto=str).")
 
-
-
-# 9. EXPORTAR CSV LIMPIO
+# 8. EXPORTAR CSV LIMPIO
 df.to_csv(RUTA_LIMPIO, index=False, encoding="utf-8")
 line(f"Archivo limpio exportado en: {RUTA_LIMPIO}")
