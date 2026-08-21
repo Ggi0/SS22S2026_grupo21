@@ -1,0 +1,17 @@
+
+services:
+  mssql:
+    build:
+      context: ./BaseDatos
+      dockerfile: Dockerfile
+    container_name: mssql-practica1
+    restart: always
+    env_file:
+      - ./.env
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+
+volumes:
+  mssql_data:
