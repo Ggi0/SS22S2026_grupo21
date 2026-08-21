@@ -1,9 +1,13 @@
 """
+transform.py
+------------
+FASE 2: TRANSFORMACION
 
+Limpia, homologa y estandariza los datos crudos del vuelo, y los deja
+listos en forma de "tablas" (DataFrames) que representan exactamente las
+dimensiones y el hecho del modelo en estrella de BaseDatos/database.sql.
 
-Limpia, homologa y estandariza los datos crudos del vuelo, 
-los deja listos en forma de "tablas" (DataFrames) 
-
+Problemas de calidad de datos detectados en el CSV fuente y su solucion:
 
 1. Fechas en DOS formatos distintos dentro de la misma columna:
      - "20/01/2024 10:14"        -> DD/MM/AAAA, 24 horas
@@ -119,7 +123,7 @@ def transform(raw_df: pd.DataFrame) -> dict:
     n_inicial = len(df)
     log.info("Iniciando transformacion de %d registros", n_inicial)
 
-    # --- Tipos numericos basicos 
+    # --- Tipos numericos basicos -------------------------------------------------
     df["record_id"] = pd.to_numeric(df["record_id"], errors="coerce").astype("Int64")
     df["duration_min"] = pd.to_numeric(df["duration_min"], errors="coerce")
     df["delay_min"] = pd.to_numeric(df["delay_min"], errors="coerce").fillna(0)
@@ -133,7 +137,7 @@ def transform(raw_df: pd.DataFrame) -> dict:
         log.warning("Se descartan %d filas sin record_id valido", sin_id)
     df = df.dropna(subset=["record_id"])
 
-    # --- Fechas 
+    # --- Fechas --------------------------------------------------------------
     df["departure_datetime"] = df["departure_datetime"].apply(_parse_datetime)
     df["arrival_datetime"] = df["arrival_datetime"].apply(_parse_datetime)
     df["booking_datetime"] = df["booking_datetime"].apply(_parse_datetime)
@@ -158,7 +162,7 @@ def transform(raw_df: pd.DataFrame) -> dict:
         )
         df.loc[llegada_antes, "arrival_datetime"] = pd.NaT
 
-    # --- Texto: codigos de aeropuerto, numero de vuelo, asiento 
+    # --- Texto: codigos de aeropuerto, numero de vuelo, asiento ---------------
     df["origin_airport"] = df["origin_airport"].str.strip().str.upper()
     df["destination_airport"] = df["destination_airport"].str.strip().str.upper()
     df["flight_number"] = df["flight_number"].str.strip().str.upper()
@@ -172,7 +176,23 @@ def transform(raw_df: pd.DataFrame) -> dict:
     df["currency"] = df["currency"].str.strip().str.upper()
     df["passenger_nationality"] = df["passenger_nationality"].str.strip().str.upper()
 
-    # --- Homologaciones especificas 
+    # Campos categoricos vacios en el CSV fuente (ej. sales_channel="" en
+    # algunas filas -> queda como NaN tras el parseo). Si se dejan como NaN,
+    # Dim_CanalVenta (y las demas dimensiones categoricas) nunca registran
+    # ese valor, el merge de load.py no encuentra la FK correspondiente, y
+    # la fila COMPLETA del hecho se descarta -> se pierde un vuelo valido
+    # solo porque le faltaba un dato categorico. En vez de perder el vuelo,
+    # se homologa el vacio a la categoria explicita "SIN_DATO".
+    columnas_categoricas_con_default = [
+        "aircraft_type", "cabin_class", "sales_channel", "payment_method", "status",
+    ]
+    for col in columnas_categoricas_con_default:
+        faltantes = df[col].isna().sum()
+        if faltantes:
+            log.warning("%d filas con '%s' vacio se homologan a 'SIN_DATO'", faltantes, col)
+        df[col] = df[col].fillna("SIN_DATO")
+
+    # --- Homologaciones especificas -------------------------------------------
     df["airline_name_clean"] = df.apply(
         lambda r: _canonical_airline_name(r["airline_code"], r["airline_name"]), axis=1
     )
@@ -194,8 +214,9 @@ def transform(raw_df: pd.DataFrame) -> dict:
 
     log.info("Transformacion de columnas terminada. Filas resultantes: %d (de %d)", len(df), n_inicial)
 
-
+    # =====================================================================
     # Construccion de DIMENSIONES (deduplicadas)
+    # =====================================================================
 
     dim_aerolinea = (
         df[["airline_code", "airline_name_clean"]]
@@ -227,8 +248,9 @@ def transform(raw_df: pd.DataFrame) -> dict:
         .reset_index(drop=True)
     )
 
-
+    # =====================================================================
     # Dimension Fecha (a partir de todas las fechas de salida y reserva)
+    # =====================================================================
     todas_fechas = pd.concat([
         df["departure_datetime"].dt.normalize(),
         df["booking_datetime"].dt.normalize(),
@@ -245,8 +267,10 @@ def transform(raw_df: pd.DataFrame) -> dict:
     dim_fecha["es_fin_semana"] = dim_fecha["fecha_completa"].dt.dayofweek >= 5
     dim_fecha = dim_fecha.sort_values("fecha_key").reset_index(drop=True)
 
+    # =====================================================================
     # Tabla de HECHOS (las FK reales a surrogate keys se resuelven en load.py,
     # aqui se dejan las claves de negocio necesarias para hacer el merge)
+    # =====================================================================
     fact_vuelos = df[[
         "record_id", "airline_code", "origin_airport", "destination_airport",
         "aircraft_type", "cabin_class", "passenger_id", "sales_channel",
