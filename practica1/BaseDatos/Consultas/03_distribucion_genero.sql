@@ -13,3 +13,15 @@ FROM dbo.Fact_Vuelos f
 JOIN dbo.Dim_Pasajero p ON p.pasajero_key = f.pasajero_key
 GROUP BY p.genero
 ORDER BY total_vuelos DESC;
+
+
+/*
+
+genero total_vuelos porcentaje
+M	4912	49.12	
+F	4698	46.98	
+X	390	3.90	
+
+
+
+*/

@@ -37,24 +37,7 @@ def _get_or_create_dim(
     engine, df: pd.DataFrame, table: str, unique_cols: list, key_col: str,
     insert_cols: list = None,
 ) -> pd.DataFrame:
-    """Inserta en `table` las filas de `df` cuya clave de negocio
-    (`unique_cols`) no exista todavia, y devuelve `df` con la columna
-    `key_col` (surrogate key) agregada para cada fila.
 
-    IMPORTANTE: la comparacion de "ya existe / es nuevo" se hace SOLO por
-    `unique_cols` (la clave de negocio real, la que tiene el UNIQUE
-    constraint en SQL Server) y no por todas las columnas de la dimension.
-
-    Ademas, la conversion a texto para comparar se hace con CAST del lado
-    de SQL Server (no con .astype(str) del lado de pandas). Motivo: segun
-    el driver/version de pyodbc, una columna UNIQUEIDENTIFIER puede volver
-    a Python como str, como uuid.UUID o incluso como bytes crudos sin
-    decodificar -- si vuelve como bytes, str(valor) da una representacion
-    binaria que NUNCA coincide con el string del CSV, sin importar cuanto
-    se intente normalizar del lado de Python. Pidiendole a SQL Server que
-    haga el CAST a NVARCHAR antes de que el dato salga del servidor
-    elimina ese problema de raiz, sea cual sea el driver.
-    """
     insert_cols = insert_cols or unique_cols
     df = df.copy()
 

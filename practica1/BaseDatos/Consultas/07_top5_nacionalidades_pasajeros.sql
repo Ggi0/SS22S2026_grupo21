@@ -13,3 +13,16 @@ FROM dbo.Fact_Vuelos f
 JOIN dbo.Dim_Pasajero p ON p.pasajero_key = f.pasajero_key
 GROUP BY p.nacionalidad
 ORDER BY total_vuelos_comprados DESC;
+
+
+/*
+
+nacionalidad  pasajeros_unicos  total_vuelos_comprados
+PA	923	923	
+US	909	909	
+MX	908	908	
+SV	900	900	
+ES	899	899	
+
+
+*/

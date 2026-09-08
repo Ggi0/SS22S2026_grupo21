@@ -14,3 +14,15 @@ FROM dbo.Fact_Vuelos f
 JOIN dbo.Dim_Aeropuerto a ON a.aeropuerto_key = f.aeropuerto_destino_key
 GROUP BY a.codigo_iata, a.ciudad, a.pais
 ORDER BY total_vuelos DESC;
+
+
+/*
+destino ciudad pais total_vuelos
+SAP	San Pedro Sula	Honduras	701	
+CUN	Cancun	Mexico	699	
+BOG	Bogota	Colombia	696	
+BCN	Barcelona	Espana	696	
+HAV	La Habana	Cuba	693	
+
+
+*/

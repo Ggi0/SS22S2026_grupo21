@@ -19,3 +19,23 @@ JOIN dbo.Dim_EstadoVuelo ev ON ev.estado_vuelo_key = f.estado_vuelo_key
 WHERE ev.nombre_estado <> 'CANCELLED'
 GROUP BY al.nombre
 ORDER BY retraso_promedio_min DESC;
+
+
+/*
+
+aerolinea            vuelos_operados  vuelos_retrasados  retraso_promedio_min  retraso_maximo_min
+Ryanair	804	172	29.4	239	
+Southwest	821	184	28.2	240	
+Iberia	825	185	27.0	239	
+Aeromexico	729	151	26.8	239	
+United	749	160	26.8	240	
+LATAM	757	155	26.7	239	
+British Airways	776	153	25.7	240	
+Avianca	775	162	25.6	235	
+Copa Airlines	830	167	25.1	240	
+American Airlines	776	166	24.5	240	
+Delta	779	160	23.8	239	
+JetBlue	819	155	23.3	238	
+
+
+*/

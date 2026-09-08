@@ -27,6 +27,21 @@ SELECT 'Dim_EstadoVuelo',  COUNT(*) FROM dbo.Dim_EstadoVuelo
 UNION ALL
 SELECT 'Dim_Fecha',        COUNT(*) FROM dbo.Dim_Fecha;
 
+
+/*
+Fact_Vuelos	10000	
+Dim_Aerolinea	12	
+Dim_Aeropuerto	15	
+Dim_Aeronave	12	
+Dim_Pasajero	10000	
+Dim_ClaseCabina	4	
+Dim_CanalVenta	6	
+Dim_MetodoPago	5	
+Dim_EstadoVuelo	4	
+Dim_Fecha	861	
+*/
+
+
 -- Chequeo adicional: no debe haber claves foraneas huerfanas (NULL) en el hecho
 SELECT COUNT(*) AS filas_con_fk_nula
 FROM dbo.Fact_Vuelos
@@ -36,3 +51,6 @@ WHERE aerolinea_key IS NULL OR aeropuerto_origen_key IS NULL
    OR canal_venta_key IS NULL OR metodo_pago_key IS NULL
    OR estado_vuelo_key IS NULL OR fecha_salida_key IS NULL
    OR fecha_reserva_key IS NULL;
+
+--filas_con_fk_nula
+--0	
