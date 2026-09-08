@@ -12,13 +12,7 @@ implementado en SQL Server (ver documento de documentación de base de datos).
 El proceso está organizado en tres fases independientes, orquestadas por un módulo principal,
 siguiendo el patrón estándar de un pipeline ETL:
 
-```
-extract.py  --->  transform.py  --->  load.py
-(Extraccion)      (Transformacion)    (Carga)
-      \                 |                  /
-       \                |                 /
-        \---------- main.py (orquestador) --------
-```
+![](./images/etl.png)
 
 | Archivo | Fase | Responsabilidad |
 |---|---|---|
