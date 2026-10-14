@@ -1,0 +1,37 @@
+
+# dbt_project.yml — configuración del proyecto dbt "sgfood_dw"
+# Define: rutas, variables y cómo se materializa cada capa.
+#   staging       -> VIEW   (limpieza barata, siempre fresca)      schema: staging
+#   intermediate  -> VIEW   (uniones/reglas reutilizables)         schema: intermediate
+#   marts         -> TABLE  (estrella; rápida para consultas BI)   schema: marts
+
+# El schema final lo fija el macro generate_schema_name: se usa tal cual.
+
+
+name: sgfood_dw
+version: "1.0.0"
+config-version: 2
+profile: sgfood_dw            # nombre del bloque dentro de profiles.yml
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Rango de dim_fecha. Debe cubrir todas las fechas de ventas/metas/inventario.
+  fecha_inicio: "2024-01-01"
+  fecha_fin: "2027-12-31"
+
+models:
+  sgfood_dw:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
