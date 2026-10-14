@@ -1,0 +1,63 @@
+# 
+# sources.yml — declara las tablas del schema RAW que dbt LEE (las escribe Python).
+# Cualquier modelo las referencia con {{ source('raw', '<tabla>') }}; así dbt
+# conoce el linaje (docs) y se pueden probar los datos crudos.
+# 
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: "Datos crudos (todo TEXT) cargados por Python desde OLTP, CSV y Excel."
+    tables:
+      - name: oltp_sucursal
+        description: "Sucursales (OLTP)."
+        columns:
+          - name: id_sucursal
+            tests: [not_null, unique]
+      - name: oltp_categoria
+        description: "Categorías de producto (OLTP)."
+        columns:
+          - name: id_categoria
+            tests: [not_null, unique]
+      - name: oltp_marca
+        description: "Marcas (OLTP)."
+        columns:
+          - name: id_marca
+            tests: [not_null, unique]
+      - name: oltp_producto
+        description: "Productos (OLTP)."
+        columns:
+          - name: id_producto
+            tests: [not_null, unique]
+      - name: oltp_cliente
+        description: "Clientes (OLTP)."
+        columns:
+          - name: id_cliente
+            tests:
+              - not_null: {config: {severity: warn}}
+              - unique:   {config: {severity: warn}}
+      - name: oltp_venta
+        description: "Encabezado de ventas (OLTP)."
+        columns:
+          - name: id_venta
+            tests: [not_null, unique]
+      - name: oltp_venta_detalle
+        description: "Líneas de venta (OLTP)."
+        columns:
+          - name: id_detalle
+            tests: [not_null, unique]
+      - name: csv_inventario_bodega
+        description: "Snapshot de inventario por sucursal/producto (CSV)."
+      - name: csv_proveedores_precios
+        description: "Costos por proveedor y producto (CSV)."
+      - name: csv_promociones
+        description: "Promociones por categoría (CSV)."
+      - name: csv_metas_ventas
+        description: "Metas mensuales por sucursal (CSV)."
+      - name: csv_devoluciones
+        description: "Devoluciones (CSV)."
+      - name: csv_casos_calidad
+        description: "Catálogo de incidencias de calidad a probar (CSV opcional)."
+      - name: xlsx_catalogo_insumos
+        description: "Diccionario de datos de todas las fuentes (Excel)."
