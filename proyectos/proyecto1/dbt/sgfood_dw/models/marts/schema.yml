@@ -1,0 +1,114 @@
+# schema.yml (marts) — modelo dimensional (estrella) documentado y probado.
+# Cada llave primaria: unique + not_null. Cada FK de hechos: relationships a su dimensión.
+version: 2
+
+models:
+  # ----------------------------- DIMENSIONES -----------------------------
+  - name: dim_fecha
+    description: "Calendario diario en español. fecha_key = YYYYMMDD; -1 = no definido."
+    columns:
+      - {name: fecha_key, tests: [unique, not_null]}
+      - {name: fecha,     tests: [unique, not_null]}
+  - name: dim_sucursal
+    description: "Sucursales (ciudad, departamento)."
+    columns:
+      - {name: sucursal_key, tests: [unique, not_null]}
+  - name: dim_producto
+    description: "Productos con categoría y marca desnormalizadas."
+    columns:
+      - {name: producto_key, tests: [unique, not_null]}
+      - {name: sku, tests: [not_null]}
+  - name: dim_cliente
+    description: "Clientes."
+    columns:
+      - {name: cliente_key, tests: [unique, not_null]}
+  - name: dim_proveedor
+    description: "Proveedores."
+    columns:
+      - {name: proveedor_key, tests: [unique, not_null]}
+  - name: dim_canal_pago
+    description: "Dimensión junk: canal de venta x método de pago."
+    columns:
+      - {name: canal_pago_key, tests: [unique, not_null]}
+    tests:
+      - unique_combination_of_columns:
+          arguments: {combination_of_columns: [canal, metodo_pago]}
+  - name: dim_promocion
+    description: "Campañas promocionales; -1 = SIN PROMOCION."
+    columns:
+      - {name: promocion_key, tests: [unique, not_null]}
+
+  # -------------------------------- HECHOS --------------------------------
+  - name: fact_ventas
+    description: "Grano: línea de venta. Medidas: cantidad, montos, costo y margen."
+    columns:
+      - {name: detalle_key, tests: [unique, not_null]}
+      - name: fecha_key
+        tests: [{relationships: {arguments: {to: ref('dim_fecha'), field: fecha_key}}}]
+      - name: cliente_key
+        tests: [{relationships: {arguments: {to: ref('dim_cliente'), field: cliente_key}}}]
+      - name: sucursal_key
+        tests: [{relationships: {arguments: {to: ref('dim_sucursal'), field: sucursal_key}}}]
+      - name: producto_key
+        tests: [{relationships: {arguments: {to: ref('dim_producto'), field: producto_key}}}]
+      - name: canal_pago_key
+        tests: [{relationships: {arguments: {to: ref('dim_canal_pago'), field: canal_pago_key}}}]
+      - name: promocion_key
+        tests: [{relationships: {arguments: {to: ref('dim_promocion'), field: promocion_key}}}]
+  - name: fact_devoluciones
+    description: "Grano: devolución. Incluye cantidad vendida y banderas de validación."
+    columns:
+      - {name: devolucion_key, tests: [unique, not_null]}
+      - name: fecha_key
+        tests: [{relationships: {arguments: {to: ref('dim_fecha'), field: fecha_key}}}]
+      - name: producto_key
+        tests: [{relationships: {arguments: {to: ref('dim_producto'), field: producto_key}}}]
+      - name: sucursal_key
+        tests: [{relationships: {arguments: {to: ref('dim_sucursal'), field: sucursal_key}}}]
+      - name: cliente_key
+        tests: [{relationships: {arguments: {to: ref('dim_cliente'), field: cliente_key}}}]
+  - name: fact_inventario
+    description: "Snapshot de inventario. Grano: fecha_corte x sucursal x producto."
+    columns:
+      - {name: inventario_key, tests: [unique, not_null]}
+      - name: fecha_key
+        tests: [{relationships: {arguments: {to: ref('dim_fecha'), field: fecha_key}}}]
+      - name: sucursal_key
+        tests: [{relationships: {arguments: {to: ref('dim_sucursal'), field: sucursal_key}}}]
+      - name: producto_key
+        tests: [{relationships: {arguments: {to: ref('dim_producto'), field: producto_key}}}]
+    tests:
+      - unique_combination_of_columns:
+          arguments: {combination_of_columns: [fecha_key, sucursal_key, producto_key]}
+  - name: fact_metas_ventas
+    description: "Metas mensuales. Grano: mes x sucursal."
+    columns:
+      - {name: meta_key, tests: [unique, not_null]}
+      - name: fecha_key
+        tests: [{relationships: {arguments: {to: ref('dim_fecha'), field: fecha_key}}}]
+      - name: sucursal_key
+        tests: [{relationships: {arguments: {to: ref('dim_sucursal'), field: sucursal_key}}}]
+    tests:
+      - unique_combination_of_columns:
+          arguments: {combination_of_columns: [fecha_key, sucursal_key]}
+  - name: fact_precios_proveedor
+    description: "Costos de proveedor. Grano: proveedor x producto x vigencia."
+    columns:
+      - {name: precio_key, tests: [unique, not_null]}
+      - name: proveedor_key
+        tests: [{relationships: {arguments: {to: ref('dim_proveedor'), field: proveedor_key}}}]
+      - name: producto_key
+        tests: [{relationships: {arguments: {to: ref('dim_producto'), field: producto_key}}}]
+      - name: fecha_vigencia_key
+        tests: [{relationships: {arguments: {to: ref('dim_fecha'), field: fecha_key}}}]
+
+  # ------------------------------ ANALÍTICOS ------------------------------
+  - name: mart_cumplimiento_metas
+    description: "Meta vs venta real por mes y sucursal (cumplimiento %)."
+    tests:
+      - unique_combination_of_columns:
+          arguments: {combination_of_columns: [periodo, nombre_sucursal]}
+  - name: audit_calidad_datos
+    description: "Registros que incumplen cada regla de calidad (incluye las de casos_calidad_opcionales.csv)."
+    columns:
+      - {name: regla, tests: [unique, not_null]}
