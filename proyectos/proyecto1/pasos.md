@@ -363,4 +363,47 @@ bash scripts/run_dbt.sh build
 ```
 
 
-y se ejecutan las preubas 
+y se ejecutan las preubas `proyectos/proyecto1/dbt/sgfood_dw/tests`
+
+
+
+
+# make validate:
+```cmd
+(.venv) gio@gio:~/Documentos/26S2/seminario2/proyecto/SS22S2026_grupo21/proyectos/proyecto1$ make validate 
+PYTHONPATH=src python -m sgfood_etl validate
+
+== 01_conteos_raw_vs_marts.sql ==
+  [OK   ] dim_cliente (id válido) = raw + miembro -1              esperado=251 obtenido=251
+  [OK   ] dim_producto = raw + miembro -1                         esperado=81 obtenido=81
+  [OK   ] dim_sucursal = raw + miembro -1                         esperado=7 obtenido=7
+  [OK   ] fact_devoluciones = devoluciones distintas en raw       esperado=80 obtenido=80
+  [OK   ] fact_inventario = combinaciones distintas en raw        esperado=3840 obtenido=3840
+  [OK   ] fact_metas_ventas = combinaciones distintas en raw      esperado=48 obtenido=48
+  [OK   ] filas fact_ventas = raw.oltp_venta_detalle              esperado=3209 obtenido=3209
+  [OK   ] suma monto_neto = suma raw.subtotal                     esperado=838452.07 obtenido=838452.07
+
+== 02_integridad_referencial.sql ==
+  [OK   ] fact_devoluciones -> dim_producto                       esperado=0 obtenido=0
+  [OK   ] fact_inventario -> dim_producto                         esperado=0 obtenido=0
+  [OK   ] fact_inventario -> dim_sucursal                         esperado=0 obtenido=0
+  [OK   ] fact_metas_ventas -> dim_sucursal                       esperado=0 obtenido=0
+  [OK   ] fact_precios_proveedor -> dim_proveedor                 esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_canal_pago                           esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_cliente                              esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_fecha                                esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_producto                             esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_promocion                            esperado=0 obtenido=0
+  [OK   ] fact_ventas -> dim_sucursal                             esperado=0 obtenido=0
+
+== 03_llaves_no_resueltas.sql ==
+  [OK   ] fact_devoluciones con sucursal_key = -1 (venta inexistente) esperado=0 obtenido=0
+  [OK   ] fact_inventario con producto_key = -1                   esperado=0 obtenido=0
+  [OK   ] fact_precios_proveedor con producto_key = -1            esperado=0 obtenido=0
+  [OK   ] fact_ventas con cliente_key = -1                        esperado=0 obtenido=0
+  [OK   ] fact_ventas con producto_key = -1                       esperado=0 obtenido=0
+
+Validaciones con falla: 0
+(.venv) gio@gio:~/Documentos/26S2/seminario2/proyecto/SS22S2026_grupo21/proyectos/proyecto1$
+
+```
