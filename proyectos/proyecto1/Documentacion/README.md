@@ -709,6 +709,10 @@ Levantar el stack:
 docker compose -f docker-compose.yml -f airflow/docker-compose.airflow.yml up -d --build
 ```
 
+![ejecucion docker airflow](img/Captura%20desde%202026-10-14%2022-33-45.png)
+
+![Ejecucion docker airflow 2](img/Captura%20desde%202026-10-14%2022-35-45.png)
+
 ### 11.3 DAG `sgfood_elt`
 
 Archivo: `airflow/main/dags/sgfood_elt_dag.py`.
@@ -721,6 +725,10 @@ Archivo: `airflow/main/dags/sgfood_elt_dag.py`.
 | Reintentos | 1, con espera de 2 minutos |
 | Parámetro `cargar_oltp_dev` | `false` por defecto; si se marca, instala el OLTP de prueba antes de extraer |
 | Pausado al crearse | sí |
+
+![Ejecucion del flujo](./img/Captura%20desde%202026-10-14%2022-44-24.png)
+
+![Procesando](./img/Captura%20desde%202026-10-14%2022-46-12.png)
 
 ```mermaid
 flowchart LR
@@ -744,6 +752,8 @@ flowchart LR
 | `dbt_test` | BashOperator | `dbt test` |
 | `validate_sql` | PythonOperator | `pipeline.validate()`; la tarea **falla** si alguna validación da `FALLA` |
 | `dbt_docs` | BashOperator | `dbt docs generate` |
+
+![ejecucion Graph](./img/Captura%20desde%202026-10-14%2022-48-07.png)
 
 Detalles:
 - Las dos cargas corren **en paralelo** y comparten el `run_id` de Airflow como `batch_id`, así cada fila de `raw` queda ligada a la corrida que la cargó.
@@ -781,6 +791,8 @@ Detalles:
 | `make validate` | 24/24 `OK`, `Validaciones con falla: 0` |
 | Suma de `monto_neto` en `fact_ventas` | 838 452.07 = suma de `subtotal` en raw |
 | Registros en miembro `-1` | 0 |
+
+![resutlado satisfactorio](./img/Captura%20desde%202026-10-14%2022-49-51.png)
 
 ---
 
