@@ -1,4 +1,3 @@
-# =============================================================================
 # docker-compose.airflow.yml — agrega Apache Airflow 3 al stack existente.
 #
 # NO reemplaza a docker-compose.yml: se COMBINA con él (mismo proyecto Compose,
@@ -14,7 +13,6 @@
 #
 # Levantar:   docker compose -f docker-compose.yml -f docker-compose.airflow.yml up -d --build
 # (o definir COMPOSE_FILE en .env y usar simplemente `docker compose up -d`; ver README)
-# =============================================================================
 
 # ---- Bloque reutilizable: lo que comparten todos los contenedores de Airflow ----
 x-airflow-common: &airflow-common
