@@ -13,9 +13,9 @@ from airflow.sdk import DAG, Param
 log = logging.getLogger(__name__)
 
 PROJECT_DIR = os.getenv("SGFOOD_PROJECT_DIR", "/opt/airflow/project")   
-DBT_DIR = f"{PROJECT_DIR}/dbt/sgfood_dw"                                   
-DBT_BIN = os.getenv("DBT_BIN", "dbt")                                      
-ARTIFACTS_DIR = os.getenv("SGFOOD_ARTIFACTS_DIR", "/opt/airflow/artifacts")  
+DBT_DIR = f"{PROJECT_DIR}/dbt/sgfood_dw"                                  
+DBT_BIN = os.getenv("DBT_BIN", "dbt")                                     
+ARTIFACTS_DIR = os.getenv("SGFOOD_ARTIFACTS_DIR", "/opt/airflow/artifacts") 
 
 sys.path.insert(0, f"{PROJECT_DIR}/src")
 
@@ -79,7 +79,7 @@ def _validate_sql() -> None:
 
 default_args = {
     "owner": "sgfood",
-    "retries": 1,                          # un reintento ante fallas transitorias (BD ocupada, red)
+    "retries": 1,                          
     "retry_delay": timedelta(minutes=2),
 }
 
@@ -90,8 +90,8 @@ with DAG(
     schedule="0 2 * * *",                  
     start_date=pendulum.datetime(2026, 10, 1, tz="America/Guatemala"),
     catchup=False,                         
-    max_active_runs=1,                  
-    is_paused_upon_creation=True,         
+    max_active_runs=1,                     
+    is_paused_upon_creation=True,        
     default_args=default_args,
     params={
         "cargar_oltp_dev": Param(
@@ -118,6 +118,7 @@ with DAG(
         op_kwargs={"batch_id": "{{ run_id }}"},
     )
 
+    # 3) Transformación con dbt (T) -------------------------------------------
     dbt_run_staging = BashOperator(
         task_id="dbt_run_staging",
         bash_command=dbt_command("run --select staging"),
