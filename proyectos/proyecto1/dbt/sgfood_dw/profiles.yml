@@ -1,0 +1,20 @@
+
+# profiles.yml — conexión de dbt al Data Warehouse.
+# NO contiene credenciales: las lee de variables de entorno (las mismas del
+# archivo .env, que scripts/run_dbt.sh exporta).
+# Uso:  dbt <cmd> --profiles-dir .   (run_dbt.sh ya lo hace)
+
+
+sgfood_dw:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DW_HOST', 'localhost') }}"
+      port: "{{ env_var('DW_PORT', '5432') | as_number }}"
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      schema: staging              # schema por defecto (cada capa fija el suyo)
+      sslmode: "{{ env_var('DW_SSLMODE', 'prefer') }}"
+      threads: 4

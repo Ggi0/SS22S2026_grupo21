@@ -1,0 +1,21 @@
+# schema.yml (intermediate) — lógica de negocio reutilizable entre marts.
+version: 2
+
+models:
+  - name: int_ventas_detalle_enriquecido
+    description: "Línea de venta + encabezado + costo; calcula bruto, descuento, costo y margen."
+    columns:
+      - name: id_detalle
+        tests: [unique, not_null]
+  - name: int_ventas_por_sucursal_mes
+    description: "Ventas reales (COMPLETADAS) por sucursal y mes."
+    tests:
+      - unique_combination_of_columns:
+          arguments: {combination_of_columns: [periodo_fecha, id_sucursal]}
+  - name: int_devoluciones_validadas
+    description: "Devoluciones cruzadas contra lo vendido (existe_venta_producto, excede_vendido)."
+  - name: int_ventas_promocion
+    description: "Promoción aplicable (máx. descuento) por línea de venta."
+    columns:
+      - name: id_detalle
+        tests: [unique, not_null]

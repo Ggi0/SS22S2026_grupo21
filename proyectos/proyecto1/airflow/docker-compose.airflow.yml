@@ -1,0 +1,135 @@
+# =============================================================================
+# docker-compose.airflow.yml — agrega Apache Airflow 3 al stack existente.
+#
+# NO reemplaza a docker-compose.yml: se COMBINA con él (mismo proyecto Compose,
+# misma red), por eso desde los contenedores de Airflow el Data Warehouse se
+# alcanza con el nombre del servicio:  host = postgres , puerto = 5432.
+#
+# Servicios que define:
+#   airflow-db         BD de METADATOS de Airflow (corridas, estados). Separada del DW.
+#   airflow-init       Una sola vez: migra el esquema de la BD de metadatos.
+#   airflow-apiserver  Interfaz web + API            -> http://localhost:8080
+#   airflow-scheduler  Decide qué tarea corre y cuándo; ejecuta las tareas (LocalExecutor)
+#   airflow-dag-processor  Lee airflow/dags/*.py y registra los DAG
+#
+# Levantar:   docker compose -f docker-compose.yml -f docker-compose.airflow.yml up -d --build
+# (o definir COMPOSE_FILE en .env y usar simplemente `docker compose up -d`; ver README)
+# =============================================================================
+
+# ---- Bloque reutilizable: lo que comparten todos los contenedores de Airflow ----
+x-airflow-common: &airflow-common
+  build:
+    context: .                       # raíz de Proyecto1
+    dockerfile: airflow/Dockerfile
+  image: sgfood-airflow:3.3.2
+  # Corre con TU usuario de Linux (AIRFLOW_UID en .env) para poder escribir en las
+  # carpetas montadas (logs, artifacts) sin problemas de permisos.
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment: &airflow-env
+    # ---- Configuración de Airflow -------------------------------------------
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor            # tareas en paralelo dentro del scheduler
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"             # sin DAGs de ejemplo
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${AIRFLOW_DB_PASSWORD:-airflow}@airflow-db:5432/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+    # Secreto COMPARTIDO entre scheduler y api-server para firmar tokens de ejecución.
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:-sgfood-cambie-este-secreto-jwt-por-uno-propio-123456}
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-apiserver:8080/execution/
+    # Usuario de la interfaz: admin; su contraseña está en airflow/auth/passwords.json
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin"
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/auth/passwords.json
+
+    # ---- Integración con el proyecto SG-Food ----------------------------------
+    SGFOOD_PROJECT_DIR: /opt/airflow/project          # Proyecto1 montado abajo
+    SGFOOD_ARTIFACTS_DIR: /opt/airflow/artifacts      # salidas de dbt
+    PYTHONPATH: /opt/airflow/project/src              # para `import sgfood_etl`
+    DBT_BIN: /home/airflow/dbt-venv/bin/dbt           # dbt aislado (ver Dockerfile)
+
+    # ---- Conexión al Data Warehouse (dentro de la red de Docker) --------------
+    # Estas variables tienen prioridad sobre las del .env (que apuntan a localhost,
+    # válido solo desde tu máquina). Solo cambian host/puerto (y solo si el DW deja de ser
+    # el servicio `postgres`: nube u otro servidor -> AIRFLOW_DW_HOST/AIRFLOW_DW_PORT en .env);
+    # usuario, clave y base salen del MISMO .env. Se definen los dos juegos de nombres (DW_* y POSTGRES_*)
+    # para que funcione tanto el código Python como el profiles.yml de dbt.
+    DW_HOST: ${AIRFLOW_DW_HOST:-postgres}             # por defecto: servicio `postgres` de docker-compose.yml
+    DW_PORT: ${AIRFLOW_DW_PORT:-5432}                 # puerto INTERNO del contenedor (no el publicado)
+    DW_DB: ${POSTGRES_DB}
+    DW_USER: ${POSTGRES_USER}
+    DW_PASSWORD: ${POSTGRES_PASSWORD}
+    DW_SSLMODE: ${DW_SSLMODE:-prefer}
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags              # DAGs
+    - ./airflow/logs:/opt/airflow/logs              # logs de cada tarea
+    - ./airflow/artifacts:/opt/airflow/artifacts    # docs / resultados de dbt
+    - ./airflow/auth:/opt/airflow/auth              # contraseña de la interfaz
+    - .:/opt/airflow/project                        # TODO Proyecto1 (src, dbt, sql, data)
+  depends_on: &airflow-depends
+    airflow-db:
+      condition: service_healthy
+    airflow-init:
+      condition: service_completed_successfully
+
+services:
+  # ---- BD de metadatos de Airflow (NO es el Data Warehouse) --------------------
+  airflow-db:
+    image: postgres:16
+    container_name: sgfood-airflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD:-airflow}
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow", "-d", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+
+  # ---- Inicialización (corre una vez y termina) --------------------------------
+  airflow-init:
+    <<: *airflow-common
+    container_name: sgfood-airflow-init
+    command: db migrate
+    restart: "no"
+    depends_on:
+      airflow-db:
+        condition: service_healthy
+
+  # ---- Interfaz web + API ------------------------------------------------------
+  airflow-apiserver:
+    <<: *airflow-common
+    container_name: sgfood-airflow-apiserver
+    command: api-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/api/v2/monitor/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on: *airflow-depends
+
+  # ---- Planificador / ejecutor de tareas ---------------------------------------
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: sgfood-airflow-scheduler
+    command: scheduler
+    restart: unless-stopped
+    depends_on: *airflow-depends
+
+  # ---- Procesador de DAGs (lee airflow/dags) -----------------------------------
+  airflow-dag-processor:
+    <<: *airflow-common
+    container_name: sgfood-airflow-dag-processor
+    command: dag-processor
+    restart: unless-stopped
+    depends_on: *airflow-depends
+
+volumes:
+  airflow_db_data:
