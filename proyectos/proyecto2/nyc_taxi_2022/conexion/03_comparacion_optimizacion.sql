@@ -31,13 +31,13 @@ WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
 
 -- BENCH Q1_B
 SELECT COUNT(*) AS viajes, ROUND(AVG(fare_amount), 2) AS tarifa_prom, ROUND(AVG(tip_amount), 2) AS propina_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
   AND pickup_location_id = '132';
 
 -- BENCH Q1_C
 SELECT COUNT(*) AS viajes, ROUND(AVG(fare_amount), 2) AS tarifa_prom, ROUND(AVG(tip_amount), 2) AS propina_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
   AND pickup_location_id = '132';
 
@@ -53,14 +53,14 @@ GROUP BY hora ORDER BY hora;
 
 -- BENCH Q2_B
 SELECT EXTRACT(HOUR FROM pickup_datetime) AS hora, COUNT(*) AS viajes, ROUND(AVG(total_amount), 2) AS total_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) BETWEEN '2022-03-07' AND '2022-03-13'
   AND pickup_location_id = '237' AND dropoff_location_id = '236'
 GROUP BY hora ORDER BY hora;
 
 -- BENCH Q2_C
 SELECT EXTRACT(HOUR FROM pickup_datetime) AS hora, COUNT(*) AS viajes, ROUND(AVG(total_amount), 2) AS total_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) BETWEEN '2022-03-07' AND '2022-03-13'
   AND pickup_location_id = '237' AND dropoff_location_id = '236'
 GROUP BY hora ORDER BY hora;
@@ -76,13 +76,13 @@ GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 
 -- BENCH Q3_B
 SELECT pickup_location_id, COUNT(*) AS viajes
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) = '2022-09-15'
 GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 
 -- BENCH Q3_C
 SELECT pickup_location_id, COUNT(*) AS viajes
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) = '2022-09-15'
 GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 
@@ -92,7 +92,7 @@ GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 -- Cambia `region-us` si tu dataset está en otra ubicación.
 -- Guardar el resultado en tabla para el dashboard/README:
 -- =====================================================================
-CREATE OR REPLACE TABLE `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.benchmark_optimizacion` AS
+CREATE OR REPLACE TABLE `ID_Proyecto_GCP.nyc_taxi_2022.benchmark_optimizacion` AS
 SELECT
   REGEXP_EXTRACT(query, r'BENCH (Q[0-9]_[ABC])')           AS consulta,
   CASE REGEXP_EXTRACT(query, r'BENCH Q[0-9]_([ABC])')
@@ -127,5 +127,5 @@ SELECT
   ROUND(100 * (1 - SAFE_DIVIDE(
     MAX(IF(variante = 'Particion + cluster', mb_procesados, NULL)),
     MAX(IF(variante = 'Publica (original)', mb_procesados, NULL)))), 1) AS pct_reduccion_vs_publica
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.benchmark_optimizacion`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.benchmark_optimizacion`
 GROUP BY q ORDER BY q;

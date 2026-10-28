@@ -43,7 +43,7 @@ WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
 ```sql
 -- BENCH Q1_B
 SELECT COUNT(*) AS viajes, ROUND(AVG(fare_amount), 2) AS tarifa_prom, ROUND(AVG(tip_amount), 2) AS propina_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
   AND pickup_location_id = '132';
 ```
@@ -63,7 +63,7 @@ WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
 ```sql
 -- BENCH Q1_C
 SELECT COUNT(*) AS viajes, ROUND(AVG(fare_amount), 2) AS tarifa_prom, ROUND(AVG(tip_amount), 2) AS propina_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) BETWEEN '2022-06-01' AND '2022-06-30'
   AND pickup_location_id = '132';
 ```
@@ -118,7 +118,7 @@ GROUP BY hora ORDER BY hora;
 ```sql
 -- BENCH Q2_B
 SELECT EXTRACT(HOUR FROM pickup_datetime) AS hora, COUNT(*) AS viajes, ROUND(AVG(total_amount), 2) AS total_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) BETWEEN '2022-03-07' AND '2022-03-13'
   AND pickup_location_id = '237' AND dropoff_location_id = '236'
 GROUP BY hora ORDER BY hora;
@@ -138,7 +138,7 @@ GROUP BY hora ORDER BY hora;
 ### Particionada + Clustering
 ```sql
 SELECT EXTRACT(HOUR FROM pickup_datetime) AS hora, COUNT(*) AS viajes, ROUND(AVG(total_amount), 2) AS total_prom
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) BETWEEN '2022-03-07' AND '2022-03-13'
   AND pickup_location_id = '237' AND dropoff_location_id = '236'
 GROUP BY hora ORDER BY hora;
@@ -191,7 +191,7 @@ GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 ```sql
 -- BENCH Q3_B
 SELECT pickup_location_id, COUNT(*) AS viajes
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 WHERE DATE(pickup_datetime) = '2022-09-15'
 GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 ```
@@ -211,7 +211,7 @@ GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 ```sql
 -- BENCH Q3_C
 SELECT pickup_location_id, COUNT(*) AS viajes
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 WHERE DATE(pickup_datetime) = '2022-09-15'
 GROUP BY pickup_location_id ORDER BY viajes DESC LIMIT 10;
 ```

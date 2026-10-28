@@ -17,7 +17,7 @@
 --   * payment_type 1-4 (descarta 0 = desconocido, que coincide con NULLs)
 --   * distancia 0.1-100 millas, tarifa 2.5-500 USD, total > 0
 --   * duración 1-180 min y velocidad media <= 80 mph
-CREATE OR REPLACE TABLE `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt` AS
+CREATE OR REPLACE TABLE `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt` AS
 WITH base AS (
   SELECT
     -- Llave determinística del viaje (sirve luego para muestreo reproducible)
@@ -78,32 +78,32 @@ WHERE trip_duration_min BETWEEN 1 AND 180
 --                                      solo leen las particiones necesarias.
 -- Cluster por ubicaciones          -> filtros por zona leen menos bloques.
 -- (El orden del cluster importa: primero la columna que más se filtra.)
-CREATE OR REPLACE TABLE `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`
+CREATE OR REPLACE TABLE `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`
 PARTITION BY DATE(pickup_datetime)
 CLUSTER BY pickup_location_id, dropoff_location_id
 AS
-SELECT * FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`;
+SELECT * FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`;
 
 -- ---------- (3) RESUMEN DE CALIDAD ----------
-CREATE OR REPLACE TABLE `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.calidad_resumen` AS
+CREATE OR REPLACE TABLE `ID_Proyecto_GCP.nyc_taxi_2022.calidad_resumen` AS
 SELECT
   (SELECT COUNT(*) FROM `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2022`) AS registros_originales,
-  (SELECT COUNT(*) FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`)                      AS registros_limpios,
+  (SELECT COUNT(*) FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`)                      AS registros_limpios,
   (SELECT COUNT(*) FROM `bigquery-public-data.new_york_taxi_trips.tlc_yellow_trips_2022`)
-    - (SELECT COUNT(*) FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`)                  AS registros_descartados;
+    - (SELECT COUNT(*) FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`)                  AS registros_descartados;
 
 SELECT *, ROUND(100 * registros_descartados / registros_originales, 2) AS pct_descartado
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.calidad_resumen`;
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.calidad_resumen`;
 
 -- ---------- VERIFICACIÓN (evidencia de partición y clustering) ----------
 -- Debe mostrar ~334 particiones (una por día de ene-nov).
 SELECT table_name, partition_id, total_rows
-FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.INFORMATION_SCHEMA.PARTITIONS`
+FROM `ID_Proyecto_GCP.nyc_taxi_2022.INFORMATION_SCHEMA.PARTITIONS`
 WHERE table_name = 'taxi_clean_part'
 ORDER BY partition_id
 LIMIT 10;
 
 -- Ambas tablas deben tener el MISMO conteo.
-SELECT 'sin_opt' AS tabla, COUNT(*) AS filas FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_sin_opt`
+SELECT 'sin_opt' AS tabla, COUNT(*) AS filas FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_sin_opt`
 UNION ALL
-SELECT 'part',             COUNT(*)          FROM `project-d8c3b660-d94c-44a1-b5b.nyc_taxi_2022.taxi_clean_part`;
+SELECT 'part',             COUNT(*)          FROM `ID_Proyecto_GCP.nyc_taxi_2022.taxi_clean_part`;
